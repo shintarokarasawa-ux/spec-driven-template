@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
+import { server } from "@/mocks/server";
 import { useTaskFilterStore } from "../store";
 import { TaskList } from "./task-list";
 
@@ -35,5 +37,13 @@ describe("TaskList", () => {
 
     expect(screen.getByText("永続ドキュメントを作成する")).toBeInTheDocument();
     expect(screen.queryByText("サンプル機能を実装する")).not.toBeInTheDocument();
+  });
+
+  it("APIエラー時はエラーメッセージを表示する", async () => {
+    // このテストに限りハンドラを500応答に差し替える(afterEachで自動リセット)
+    server.use(http.get("*/api/tasks", () => HttpResponse.json(null, { status: 500 })));
+    renderWithQueryClient(<TaskList />);
+
+    expect(await screen.findByText("タスクの取得に失敗しました")).toBeInTheDocument();
   });
 });

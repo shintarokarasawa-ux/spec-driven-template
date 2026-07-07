@@ -12,11 +12,12 @@ frontend/src/
 │   ├── root-layout.tsx   # 共通レイアウト(ヘッダー・ナビ)
 │   └── home-page.tsx     # トップページ
 ├── components/ui/        # shadcn/ui生成コンポーネント(手書き変更しない)
-├── lib/                  # 汎用ユーティリティ(cn等)
-├── test/setup.ts         # Vitestセットアップ
+├── lib/                  # 汎用ユーティリティ(cn、api-client等)
+├── mocks/                # MSWハンドラ(API契約のドキュメントを兼ねる)
+├── test/setup.ts         # Vitestセットアップ(MSWライフサイクル込み)
 └── features/[機能名]/     # 機能スライス(自己完結)
-    ├── types.ts          # この機能のドメイン型
-    ├── api.ts            # データ取得(Query hooks + クエリキー)
+    ├── types.ts          # この機能のドメイン型(Zodスキーマ + z.inferで導出)
+    ├── api.ts            # データ取得・更新(Query/Mutationフック + クエリキー)
     ├── store.ts          # クライアント状態(Zustand)+ 純粋関数
     ├── routes.tsx        # この機能のルート定義
     ├── components/       # この機能のコンポーネント
@@ -39,24 +40,57 @@ frontend/src/
 **アンチパターン**: Queryの結果をZustand/useStateにコピーしない
 (キャッシュの二重管理になる。表示加工は描画時に純粋関数で行う)。
 
-## データ取得(TanStack Query)
+## データ取得・更新(TanStack Query + APIクライアント)
 
 ```tsx
-// api.ts — クエリキーはファクトリで一元管理
+// api.ts — クエリキーはファクトリで一元管理し、
+// HTTPは lib/api-client.ts のapiFetch経由、レスポンスはZodでparseしてから使う
 export const taskKeys = {
   all: ["tasks"] as const,
   detail: (id: string) => ["tasks", id] as const,
 };
 
+async function fetchTasks(): Promise<Task[]> {
+  const payload = await apiFetch("/tasks");
+  return taskListSchema.parse(payload); // 契約違反はここで例外化
+}
+
 export function useTasksQuery() {
   return useQuery({ queryKey: taskKeys.all, queryFn: fetchTasks });
+}
+
+// 更新系の基本形: 成功したら関連クエリをinvalidateして再取得
+export function useCreateTaskMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createTask,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: taskKeys.all }),
+  });
 }
 ```
 
 - フックは `use[名詞]Query` / `use[動詞]Mutation` で命名し、`api.ts` に集約
 - コンポーネントから直接fetchしない(必ずapi.tsのフック経由)
+- `lib/api-client.ts` がベースURL・JSONヘッダ・HTTPエラーの`ApiError`正規化を一元化する。
+  各featureで素のfetchを書かない
+- ドメイン型はZodスキーマで定義し`z.infer`で導出(`types.ts`)。APIレスポンスは
+  境界で必ず`parse`する(黙って壊れたデータを描画しない)
 - 既定ポリシー(staleTime・retry)は `app/query-client.ts` で一元管理し、個別上書きは理由をコメント
-- 更新系は `useMutation` + `onSuccess`での `invalidateQueries(taskKeys.all)` を基本形とする
+- mutationの`isPending`中は送信ボタンをdisabledにし、二重送信を防ぐ
+
+## APIモック(MSW)
+
+バックエンド不在でも本番同等のコードパス(fetch→エラー処理→parse)で動作・テストするため、
+モックはqueryFn内ではなく**HTTP層(MSW)**に置く。
+
+- `src/mocks/handlers.ts` が唯一のモック定義。**API契約のドキュメントを兼ねる**ため、
+  実バックエンド実装時はこのパス・リクエスト/レスポンス形式に合わせる
+- 開発時: `main.tsx`がDEVかつ`VITE_API_MOCK !== "false"`のときworkerを起動。
+  実APIへの接続は`.env.local`に`VITE_API_MOCK=false`を設定するだけ
+- テスト時: `test/setup.ts`がmsw/nodeのlisten/reset/closeとモック状態リセットを管理済み。
+  エラー系のテストは`server.use(...)`でそのテストに限りハンドラを差し替える
+- ハンドラのパスは`*/api/tasks`形式(ブラウザ/Node両対応のワイルドカード)
+- `public/mockServiceWorker.js`はMSW生成物。手で編集せず、Biome対象外
 
 ## クライアント状態(Zustand)
 
@@ -98,21 +132,30 @@ export function applyFilter(tasks: Task[], filter: TaskFilter): Task[] { ... }
 ## 環境変数
 
 - クライアントに公開してよい値のみ `VITE_` プレフィックスで `.env.local` に定義
-  (`.env.local`はgitignore対象)
-- **秘密情報(APIシークレット等)はフロントエンドに置かない**(バンドルに埋め込まれ公開される)
+  (`.env.local`はgitignore対象。キー名は`frontend/.env.example`に記載)
+- `VITE_API_BASE_URL`: APIのベースURL(既定は同一オリジンの`/api`)
+- `VITE_API_MOCK=false`: 開発時のMSWモックを無効化して実APIに接続
+- **秘密情報(APIシークレット等)はフロントエンドに置かない**(バンドルに埋め込まれ公開される)。
+  認証が必要なAPIはバックエンド(BFF)経由で呼び、トークンはサーバー側で付与する
 
 ## テスト
 
 - 純粋関数・ストア: 通常のVitestテスト(`store.test.ts`)
 - コンポーネント: Testing Libraryでユーザー視点のテスト
   (`getByRole`優先。QueryClientProviderはテスト用に都度生成し`retry: false`)
+- データ取得はMSW経由で検証する(fetch・parse・エラー処理まで通る)。
+  APIエラーのテストは`server.use`で500応答に差し替える
 - Zustandはグローバルなので `beforeEach` で `setState` によりリセットする
+  (MSWのモック状態は`test/setup.ts`が自動リセット)
 - E2E: 主要導線のスモークのみ`e2e/`に置く(網羅はユニットで)
 
 ## レビュー観点
 
 - [ ] サーバー状態がZustand/useStateにコピーされていないか
-- [ ] fetchがapi.tsの外に書かれていないか
+- [ ] fetchがapi.tsの外に書かれていないか(素のfetchではなくapiFetch経由か)
+- [ ] APIレスポンスがZodでparseされてから使われているか
+- [ ] 更新系が`invalidateQueries`で一覧を再取得しているか・二重送信防止があるか
+- [ ] モックがqueryFn内ではなくMSWハンドラに置かれているか
 - [ ] features/間の相互importがないか
 - [ ] ローディング・エラー・空状態の欠落がないか
 - [ ] クエリキーがファクトリ経由か(文字列リテラルの直書きがないか)

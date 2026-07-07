@@ -17,6 +17,8 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 | ルーティング | React Router(`createBrowserRouter`のデータルーター) |
 | サーバー状態 | TanStack Query |
 | クライアント状態 | Zustand |
+| スキーマ検証 | Zod(APIレスポンスを境界でparse) |
+| APIモック | MSW(開発・テスト共通、`src/mocks/handlers.ts`) |
 | UI | Tailwind CSS + shadcn/ui |
 | ユニットテスト | Vitest + Testing Library |
 | E2E | Playwright |
@@ -60,6 +62,8 @@ pnpm e2e          # E2E(Playwright。初回は pnpm exec playwright install chro
 ## チェックリスト(実装完了前)
 
 - [ ] サーバー状態はTanStack Query、クライアント状態はZustandに分離されている
+- [ ] HTTPは`apiFetch`経由、レスポンスはZodスキーマでparseされている
+- [ ] モックはMSWハンドラ(`src/mocks/handlers.ts`)に一元化されている
 - [ ] 新規ルートは機能スライスの`routes.tsx`で定義し、`app/router.tsx`で集約されている
 - [ ] ローディング・エラー・空状態がUIに反映されている
 - [ ] テストがスライス内にコロケーションされ、`pnpm test`がパスする

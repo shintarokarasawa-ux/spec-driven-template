@@ -17,10 +17,13 @@ frontend/src/features/projects/
 
 ## 2. 型とデータ取得(types.ts, api.ts)
 
-1. `types.ts` にドメイン型を定義
-2. `api.ts` にクエリキーファクトリとQueryフックを定義
-   - バックエンドが未確定の間は `tasks/api.ts` と同様に遅延つきモックで先行実装できる
-   - API接続時は `queryFn` の中身だけを差し替える
+1. `types.ts` にZodスキーマを定義し、型は`z.infer`で導出
+2. `api.ts` にクエリキーファクトリとQuery/Mutationフックを定義
+   - HTTPは`apiFetch`(lib/api-client)経由、レスポンスはスキーマで`parse`
+   - 更新系は`useMutation` + 成功時`invalidateQueries`(`tasks/api.ts`参照)
+3. バックエンドが未実装の間は `src/mocks/handlers.ts` にこの機能のハンドラを追加する
+   (ハンドラがAPI契約のドキュメントになる。実API接続時は`.env.local`に
+   `VITE_API_MOCK=false`を設定するだけでコード変更不要)
 
 ## 3. クライアント状態(store.ts、必要な場合のみ)
 

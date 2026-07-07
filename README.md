@@ -12,7 +12,7 @@ Claude Codeでスペック駆動開発を行うためのプロジェクトひな
 | ステアリングファイル | 作業単位の要求・設計・タスクリストを`.steering/`に記録し、進捗をリアルタイムに追跡 |
 | スキル群 | 各ドキュメントの作成ガイド・テンプレートを`.claude/skills/`に同梱 |
 | サブエージェント | ドキュメントレビュー・実装検証の専用エージェントを同梱 |
-| フロントエンド基盤 | Vite + React + TypeScriptのベースライン(`frontend/`)。TanStack Query・Zustand・Tailwind CSS・shadcn/ui・Vitest・Playwright・Biomeが配線済みで、実装パターンは`react-frontend`スキルに定義 |
+| フロントエンド基盤 | Vite + React + TypeScriptのベースライン(`frontend/`)。TanStack Query・Zustand・Zod・MSW・Tailwind CSS・shadcn/ui・Vitest・Playwright・Biomeが配線済みで、実装パターンは`react-frontend`スキルに定義 |
 | 開発環境 | Dev Container(Python 3.11+ / uv、Node 22 / pnpm) / ruff / mypy / pytest / pre-commit |
 
 ## 使い方
@@ -97,8 +97,13 @@ pnpm e2e                      # E2E(初回は pnpm exec playwright install chrom
 ## フロントエンドの実装パターン
 
 `frontend/` は機能スライス構造(`src/features/`)を採用しており、サンプル機能
-`features/tasks/` がルーティング(React Router)× データ取得(TanStack Query)×
-クライアント状態(Zustand)× UI(Tailwind + shadcn/ui)の配線例になっています。
+`features/tasks/` がルーティング(React Router)× データ取得・更新(TanStack Query +
+Zod検証)× クライアント状態(Zustand)× UI(Tailwind + shadcn/ui)の配線例になっています。
+
+バックエンドAPIは開発・テストともMSW(`src/mocks/handlers.ts`)がモックしており、
+バックエンドなしで `pnpm dev` がそのまま動きます。実APIに接続する際は
+`frontend/.env.local` に `VITE_API_MOCK=false` を設定するだけです(ハンドラ定義が
+そのままAPI契約のドキュメントになります)。
 
 配線規約と新規機能追加の定型手順は `.claude/skills/react-frontend/` に定義されており、
 Claude CodeがReact実装時に自動で参照します。

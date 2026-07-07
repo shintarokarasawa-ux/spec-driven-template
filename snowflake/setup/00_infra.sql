@@ -1,0 +1,28 @@
+-- ============================================================================
+-- 00: 基盤オブジェクト(ロール・ウェアハウス・DB・スキーマ)
+--
+-- 識別子はプロジェクトに合わせて一括置換する:
+--   AGENT_DEMO_DB / AGENTS / AGENT_WH / AGENT_DEV_ROLE
+-- 実行ロール: ACCOUNTADMIN(初回のみ)
+-- 実行順: このディレクトリの番号順(00 → 01 → 10 → ... → 22)
+-- ============================================================================
+USE ROLE ACCOUNTADMIN;
+
+-- 開発用ロール(Cortex機能の利用権限を含む)
+CREATE ROLE IF NOT EXISTS AGENT_DEV_ROLE;
+GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO ROLE AGENT_DEV_ROLE;
+
+CREATE WAREHOUSE IF NOT EXISTS AGENT_WH
+  WAREHOUSE_SIZE = XSMALL
+  AUTO_SUSPEND = 60
+  AUTO_RESUME = TRUE;
+
+CREATE DATABASE IF NOT EXISTS AGENT_DEMO_DB;
+CREATE SCHEMA IF NOT EXISTS AGENT_DEMO_DB.AGENTS;
+
+GRANT USAGE ON WAREHOUSE AGENT_WH TO ROLE AGENT_DEV_ROLE;
+GRANT USAGE ON DATABASE AGENT_DEMO_DB TO ROLE AGENT_DEV_ROLE;
+GRANT ALL ON SCHEMA AGENT_DEMO_DB.AGENTS TO ROLE AGENT_DEV_ROLE;
+
+-- TODO: 開発者ユーザーにロールを付与
+-- GRANT ROLE AGENT_DEV_ROLE TO USER <YOUR_USER>;

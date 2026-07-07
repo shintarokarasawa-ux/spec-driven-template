@@ -5,11 +5,13 @@
 - 開発環境: devcontainer(Python 3.11+ / Node 22)
 - バックエンド・CLI: Python(パッケージマネージャー: uv)
 - フロントエンド: `frontend/` = Vite + React + TypeScript
-  (TanStack Query / Zustand / Tailwind CSS / shadcn/ui / Vitest / Playwright / Biome / pnpm)
+  (TanStack Query / Zustand / Zod / MSW / Tailwind CSS / shadcn/ui / Vitest / Playwright / Biome / pnpm)
+- エージェントバックエンド: `snowflake/`(Cortex Agents多層構造のSQL資産)+
+  `backend/`(FastAPI BFF、Run APIクライアント)
 - (プロジェクト固有のフレームワーク・ミドルウェアをここに追記)
 
 不要な側は削除して使う: フロントエンド不要なら `frontend/` を、
-Python不要なら `pyproject.toml` を削除する。
+Snowflake不要なら `snowflake/` と `backend/` を、Python不要なら `pyproject.toml` を削除する。
 
 ## フロントエンド開発のルール
 
@@ -19,6 +21,15 @@ Python不要なら `pyproject.toml` を削除する。
 - 配線規約(サーバー状態/クライアント状態の分離、機能スライス構造)と
   新規機能追加の定型手順がスキル内に定義されています
 - `frontend/src/features/tasks/` が参照実装です
+
+## Snowflakeエージェント開発のルール
+
+**Cortex Agents/CoWork関連(snowflake/のSQL・backend/のBFF・エージェント設計)の
+実装およびレビュー時は、必ず`snowflake-agents`スキルを使用してください。**
+
+- 多層構造の設計規約・CREATE AGENT/Run APIリファレンス・アカウント側セットアップ手順が
+  スキル内に定義されています
+- `snowflake/agents/`(2サブ+1マスター)と`backend/src/backend/cortex/client.py`が参照実装です
 
 ## スペック駆動開発の基本原則
 

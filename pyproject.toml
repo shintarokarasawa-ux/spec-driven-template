@@ -1,0 +1,51 @@
+[project]
+name = "my-project"
+version = "0.1.0"
+description = "プロジェクトの説明をここに記述"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14",
+    "mypy>=1.19",
+    "pytest>=9",
+    "pytest-cov>=7",
+    "pre-commit>=4",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", ".steering", "docs"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit
+    "N",   # pep8-naming
+    "RUF", # ruff固有
+]
+# 日本語コメント・docstring中の全角記号を誤検知するため無効化
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S106"]  # テストではassertとダミーパスワードを許容
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+exclude = ["\\.venv", "\\.steering", "docs"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "\\.\\.\\."]

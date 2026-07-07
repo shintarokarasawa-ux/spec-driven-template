@@ -52,23 +52,38 @@
 
 ## フェーズ6: コミット
 
-- [ ] 変更をコミット(pushはユーザーが実行)
+- [x] 変更をコミット(865d30b)し、origin/main へpush済み
 
 ---
 
 ## 実装後の振り返り
 
 ### 実装完了日
-{YYYY-MM-DD}
+2026-07-08
 
 ### 計画と実績の差分
 
 **計画と異なった点**:
-- {記入}
+- グローバルCSSは設計時の`src/styles/globals.css`ではなく、shadcn/ui CLIとViteの規約に
+  合わせて`src/index.css`とした
+- create-viteの現行scaffoldがoxlint同梱だったため、Biomeへ統一する除去作業が発生
+- TypeScript 6.0で`baseUrl`が非推奨エラーになるため、`paths`のみの相対指定に変更
+- Biome 2.5はTailwindディレクティブ(`@apply`等)を既定で拒否するため、
+  `css.parser.tailwindDirectives: true`を設定
+- pushは前回(履歴置換)と異なり通常の増分pushだったため、Claude Codeから直接成功した
 
 ### 学んだこと
 
-- {記入}
+- shadcn/ui CLIは`components.json`を事前に手書きしておけば`add`コマンドだけで
+  非対話導入できる(`init`の対話を回避できる)。`lib/utils.ts`は生成されない場合が
+  あるため手動作成が必要
+- 検証環境のNode(18・EOL)と最新フロントエンドスタックの要求(Node 20+)の乖離は、
+  `~/.local`へのNodeユーザーインストールで解決できる(corepackは署名鍵問題があり
+  npm経由のpnpm導入が確実)
+- サンプル機能スライス(features/tasks)を「参照実装」としてスキルから指す構成は、
+  規約文書とコードの乖離を防ぐのに有効
 
 ### 次回への改善提案
-- {記入}
+- CI(GitHub Actions)でfrontendのcheck/test/buildを回すワークフロー追加を検討
+- shadcn/uiコンポーネント追加やAPI接続(モック→実API差し替え)の実例が増えたら
+  patterns.mdに反映する

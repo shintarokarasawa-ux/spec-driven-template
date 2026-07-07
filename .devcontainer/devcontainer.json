@@ -2,9 +2,12 @@
   "name": "spec-driven-template",
   "image": "mcr.microsoft.com/devcontainers/python:3.11-bookworm",
   "features": {
-    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    }
   },
-  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && if [ -f pyproject.toml ]; then $HOME/.local/bin/uv sync --dev; fi",
+  "postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh && if [ -f pyproject.toml ]; then $HOME/.local/bin/uv sync --dev; fi && npm install -g pnpm && if [ -f frontend/package.json ]; then cd frontend && pnpm install; fi",
   "remoteEnv": {
     "PATH": "/home/vscode/.local/bin:${containerEnv:PATH}"
   },
@@ -13,12 +16,22 @@
       "extensions": [
         "ms-python.python",
         "charliermarsh.ruff",
-        "ms-python.mypy-type-checker"
+        "ms-python.mypy-type-checker",
+        "biomejs.biome",
+        "bradlc.vscode-tailwindcss"
       ],
       "settings": {
         "python.defaultInterpreterPath": ".venv/bin/python",
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "biomejs.biome",
+          "editor.formatOnSave": true
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome",
           "editor.formatOnSave": true
         }
       }

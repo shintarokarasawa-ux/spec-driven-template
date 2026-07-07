@@ -12,7 +12,8 @@ Claude Codeでスペック駆動開発を行うためのプロジェクトひな
 | ステアリングファイル | 作業単位の要求・設計・タスクリストを`.steering/`に記録し、進捗をリアルタイムに追跡 |
 | スキル群 | 各ドキュメントの作成ガイド・テンプレートを`.claude/skills/`に同梱 |
 | サブエージェント | ドキュメントレビュー・実装検証の専用エージェントを同梱 |
-| 開発環境 | Python 3.11+ / uv / Dev Container / ruff / mypy / pytest / pre-commit |
+| フロントエンド基盤 | Vite + React + TypeScriptのベースライン(`frontend/`)。TanStack Query・Zustand・Tailwind CSS・shadcn/ui・Vitest・Playwright・Biomeが配線済みで、実装パターンは`react-frontend`スキルに定義 |
+| 開発環境 | Dev Container(Python 3.11+ / uv、Node 22 / pnpm) / ruff / mypy / pytest / pre-commit |
 
 ## 使い方
 
@@ -25,11 +26,12 @@ git clone [このリポジトリ] my-project
 cd my-project
 ```
 
-Dev Containerに対応しています。Visual Studio Codeで「Reopen in Container」を選択すると、uvと依存関係が自動でセットアップされます。手動の場合:
+Dev Containerに対応しています。Visual Studio Codeで「Reopen in Container」を選択すると、uv・pnpmと依存関係が自動でセットアップされます。手動の場合:
 
 ```bash
-uv sync --dev
+uv sync --dev                  # Python側
 uv run pre-commit install
+cd frontend && pnpm install    # フロントエンド側
 ```
 
 ### 2. プロジェクトの初期化
@@ -68,7 +70,8 @@ Claude Codeを起動し、アイデアや要件のメモを `docs/ideas/` に置
 │   ├── commands/          # /setup-project, /add-feature, /review-docs
 │   ├── skills/            # 各ドキュメントの作成ガイドとテンプレート
 │   └── agents/            # doc-reviewer, implementation-validator
-├── .devcontainer/         # Python 3.11 + uv + Claude Code
+├── .devcontainer/         # Python 3.11 + Node 22 + uv/pnpm + Claude Code
+├── frontend/              # Vite + React + TS ベースライン(サンプル機能スライス入り)
 └── pyproject.toml         # ruff / mypy / pytest 設定込みの最小構成
 ```
 
@@ -77,16 +80,34 @@ Claude Codeを起動し、アイデアや要件のメモを `docs/ideas/` に置
 ## 開発コマンド
 
 ```bash
+# Python
 uv run ruff check .           # Lint
 uv run ruff format .          # フォーマット
 uv run mypy .                 # 型チェック
 uv run pytest                 # テスト
+
+# フロントエンド(frontend/ で実行)
+pnpm dev                      # 開発サーバー(http://localhost:5173)
+pnpm build                    # 型チェック + 本番ビルド
+pnpm test                     # ユニットテスト(Vitest)
+pnpm check                    # Lint + Format検査(Biome)
+pnpm e2e                      # E2E(初回は pnpm exec playwright install chromium)
 ```
+
+## フロントエンドの実装パターン
+
+`frontend/` は機能スライス構造(`src/features/`)を採用しており、サンプル機能
+`features/tasks/` がルーティング(React Router)× データ取得(TanStack Query)×
+クライアント状態(Zustand)× UI(Tailwind + shadcn/ui)の配線例になっています。
+
+配線規約と新規機能追加の定型手順は `.claude/skills/react-frontend/` に定義されており、
+Claude CodeがReact実装時に自動で参照します。
 
 ## カスタマイズ
 
-- `pyproject.toml` の `name` と依存関係をプロジェクトに合わせて変更してください
-- Python以外のスタックで使う場合は、`pyproject.toml`・`.devcontainer/`・`.pre-commit-config.yaml` を差し替えてください(ドキュメント体系とスキルは言語非依存です)
+- **フロントエンド不要のプロジェクト**: `frontend/` と `.claude/skills/react-frontend/` を削除
+- **Python不要のプロジェクト**: `pyproject.toml`・`.pre-commit-config.yaml` を削除
+- `pyproject.toml` の `name`、`frontend/package.json` の `name` をプロジェクトに合わせて変更してください(ドキュメント体系とスキルは言語非依存です)
 
 ## ライセンス
 

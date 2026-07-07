@@ -2,10 +2,23 @@
 
 ## 技術スタック
 
-- 開発環境: devcontainer
-- Python 3.11+
-- パッケージマネージャー: uv
+- 開発環境: devcontainer(Python 3.11+ / Node 22)
+- バックエンド・CLI: Python(パッケージマネージャー: uv)
+- フロントエンド: `frontend/` = Vite + React + TypeScript
+  (TanStack Query / Zustand / Tailwind CSS / shadcn/ui / Vitest / Playwright / Biome / pnpm)
 - (プロジェクト固有のフレームワーク・ミドルウェアをここに追記)
+
+不要な側は削除して使う: フロントエンド不要なら `frontend/` を、
+Python不要なら `pyproject.toml` を削除する。
+
+## フロントエンド開発のルール
+
+**React画面・コンポーネント・状態管理・データ取得の実装およびレビュー時は、
+必ず`react-frontend`スキルを使用してください。**
+
+- 配線規約(サーバー状態/クライアント状態の分離、機能スライス構造)と
+  新規機能追加の定型手順がスキル内に定義されています
+- `frontend/src/features/tasks/` が参照実装です
 
 ## スペック駆動開発の基本原則
 

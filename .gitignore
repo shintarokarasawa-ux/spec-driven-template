@@ -16,6 +16,11 @@ htmlcov/
 .env.local
 .env.*.local
 
+# Node / frontend
+node_modules/
+playwright-report/
+test-results/
+
 # Runtime data
 /data/
 
